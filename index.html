@@ -57,52 +57,54 @@
     const API_TOKEN = "qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr";  // Replace with your Baserow API token
 
     // Handle the journal form submission
-    document.getElementById("journalForm").addEventListener("submit", async function(event) {
-      event.preventDefault();  // Prevent form reload
-      const userName = document.getElementById("userName").value;
-      const journalText = document.getElementById("journalText").value;
+document.getElementById("journalForm").addEventListener("submit", async function(event) {
+  event.preventDefault();  // Prevent form reload
+  const userName = document.getElementById("userName").value;
+  const journalText = document.getElementById("journalText").value;
 
-      if (!journalText || !userName) {
-        alert("Please provide your name and reflection!");
-        return;
-      }
+  if (!journalText || !userName) {
+    alert("Please provide your name and reflection!");
+    return;
+  }
 
-      // Prepare data to send to Baserow
-      const data = {
-        fields: {
-          User: userName,  // Column "User" for the user's name
-          JournalText: journalText,  // Column "JournalText" for the journal entry
-          EntryDate: new Date().toISOString().slice(0, 10)  // Column "EntryDate" with the current date in YYYY-MM-DD format
-        }
-      };
+  // Prepare data to send to Baserow
+  const data = {
+    fields: {
+      User: userName,  // Column "User" for the user's name
+      JournalText: journalText,  // Column "JournalText" for the journal entry
+      EntryDate: new Date().toISOString().slice(0, 10)  // Column "EntryDate" with the current date in YYYY-MM-DD format
+    }
+  };
 
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Token ${API_TOKEN}`
-          },
-          body: JSON.stringify(data)
-        });
+  // Log the data being submitted to the console
+  console.log("Submitting data:", data);  // Log the data to be submitted
 
-        const result = await response.json();
-        console.log(result);  // Log the response for debugging
-
-        if (response.ok) {
-          document.getElementById("responseMessage").textContent = "Reflection submitted successfully!";
-          document.getElementById("responseMessage").style.color = "green"; // Optional: Change text color for success
-          document.getElementById("journalForm").reset(); // Clear the form after submission
-          loadPreviousEntries(); // Reload previous entries after submission
-        } else {
-          document.getElementById("responseMessage").textContent = "Error submitting the reflection: " + (result.detail || "Unknown error occurred.");  // Show API error message
-          document.getElementById("responseMessage").style.color = "red"; // Optional: Change text color for error
-        }
-      } catch (error) {
-        document.getElementById("responseMessage").textContent = "Network error. Please try again.";
-        document.getElementById("responseMessage").style.color = "red"; // Optional: Change text color for error
-      }
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${API_TOKEN}`
+      },
+      body: JSON.stringify(data)
     });
+
+    const result = await response.json();
+    console.log(result);  // Log the response for debugging
+
+    if (response.ok) {
+      document.getElementById("responseMessage").textContent = "Reflection submitted successfully!";
+      document.getElementById("journalForm").reset(); // Clear the form
+      loadPreviousEntries(); // Reload previous entries
+    } else {
+      console.error("API error:", result);  // Log detailed error for debugging
+      document.getElementById("responseMessage").textContent = "Error submitting the reflection: " + (result.detail || "Unknown error occurred.");
+    }
+  } catch (error) {
+    console.error("Network error:", error); // Log network errors for debugging
+    document.getElementById("responseMessage").textContent = "Network error. Please try again.";
+  }
+});
 
     // Fetch and display previous journal entries
     async function loadPreviousEntries() {
