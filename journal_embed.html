@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal Submission</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #journalForm {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+    }
+    #submitButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+    }
+    #responseMessage {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #previousEntries {
+      margin-top: 20px;
+    }
+    .entry {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>Journal Entry</h2>
+
+  <!-- Journal Entry Submission Form -->
+  <form id="journalForm">
+    <input type="text" id="userName" placeholder="Enter your name" required><br><br>
+    <textarea id="journalText" placeholder="Write your reflection here..." required></textarea>
+    <button type="submit" id="submitButton">Submit</button>
+  </form>
+
+  <p id="responseMessage"></p>
+
+  <!-- Display Previous Journal Entries -->
+  <h3>Previous Journal Entries</h3>
+  <div id="previousEntries">
+    <!-- Entries will be loaded here by JavaScript -->
+  </div>
+
+  <script>
+    const API_URL = "https://api.baserow.io/api/database/rows/table/1/?user_field_names=true"; // Update table ID as needed
+    const API_TOKEN = "qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr";  // Replace with your Baserow API token
+
+    // Handle the journal form submission
+    document.getElementById("journalForm").addEventListener("submit", async function(event) {
+      event.preventDefault();  // Prevent form reload
+      const userName = document.getElementById("userName").value;
+      const journalText = document.getElementById("journalText").value;
+
+      if (!journalText || !userName) {
+        alert("Please provide your name and reflection!");
+        return;
+      }
+
+      // Prepare data to send to Baserow
+      const data = {
+        fields: {
+          User: userName,  // Column "User" for the user's name
+          JournalText: journalText,  // Column "JournalText" for the journal entry
+          EntryDate: new Date().toISOString().slice(0, 10)  // Column "EntryDate" with the current date in YYYY-MM-DD format
+        }
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Token ${API_TOKEN}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          document.getElementById("responseMessage").textContent = "Reflection submitted successfully!";
+          document.getElementById("journalText").value = "";  // Clear the input after submission
+          document.getElementById("userName").value = "";  // Clear the user input as well
+          loadPreviousEntries();  // Reload the entries
+        } else {
+          document.getElementById("responseMessage").textContent = "Error submitting the reflection.";
+        }
+      } catch (error) {
+        document.getElementById("responseMessage").textContent = "Network error. Please try again.";
+      }
+    });
+
+    // Fetch and display previous journal entries
+    async function loadPreviousEntries() {
+      try {
+        const response = await fetch(API_URL, {
+          headers: {
+            "Authorization": `Token ${API_TOKEN}`
+          }
+        });
+        const data = await response.json();
+        
+        const entriesDiv = document.getElementById("previousEntries");
+        entriesDiv.innerHTML = "";  // Clear current entries
+
+        data.results.forEach(entry => {
+          const entryDiv = document.createElement("div");
+          entryDiv.className = "entry";
+          entryDiv.innerHTML = `<p><strong>User:</strong> ${entry.fields.User}</p>
+                                <p><strong>Date:</strong> ${entry.fields.EntryDate}</p>
+                                <p>${entry.fields.JournalText}</p>`;
+          entriesDiv.appendChild(entryDiv);
+        });
+
+      } catch (error) {
+        console.log("Error fetching previous entries:", error);
+      }
+    }
+
+    // Load previous entries on page load
+    window.onload = function() {
+      loadPreviousEntries();
+    };
+  </script>
+</body>
+</html>
