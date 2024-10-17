@@ -22,6 +22,7 @@
     #responseMessage {
       margin-top: 10px;
       font-weight: bold;
+      color: green;
     }
     #previousEntries {
       margin-top: 20px;
@@ -52,7 +53,7 @@
   </div>
 
   <script>
-    const API_URL = "https://api.baserow.io/api/database/rows/table/1/?user_field_names=true"; // Update table ID as needed
+    const API_URL = "https://api.baserow.io/api/database/rows/table/373734/?user_field_names=true"; // Update table ID as needed
     const API_TOKEN = "qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr";  // Replace with your Baserow API token
 
     // Handle the journal form submission
@@ -85,16 +86,21 @@
           body: JSON.stringify(data)
         });
 
+        const result = await response.json();
+        console.log(result);  // Log the response for debugging
+
         if (response.ok) {
           document.getElementById("responseMessage").textContent = "Reflection submitted successfully!";
-          document.getElementById("journalText").value = "";  // Clear the input after submission
-          document.getElementById("userName").value = "";  // Clear the user input as well
-          loadPreviousEntries();  // Reload the entries
+          document.getElementById("responseMessage").style.color = "green"; // Optional: Change text color for success
+          document.getElementById("journalForm").reset(); // Clear the form after submission
+          loadPreviousEntries(); // Reload previous entries after submission
         } else {
-          document.getElementById("responseMessage").textContent = "Error submitting the reflection.";
+          document.getElementById("responseMessage").textContent = "Error submitting the reflection: " + (result.detail || "Unknown error occurred.");  // Show API error message
+          document.getElementById("responseMessage").style.color = "red"; // Optional: Change text color for error
         }
       } catch (error) {
         document.getElementById("responseMessage").textContent = "Network error. Please try again.";
+        document.getElementById("responseMessage").style.color = "red"; // Optional: Change text color for error
       }
     });
 
@@ -111,24 +117,14 @@
         const entriesDiv = document.getElementById("previousEntries");
         entriesDiv.innerHTML = "";  // Clear current entries
 
-        data.results.forEach(entry => {
-          const entryDiv = document.createElement("div");
-          entryDiv.className = "entry";
-          entryDiv.innerHTML = `<p><strong>User:</strong> ${entry.fields.User}</p>
-                                <p><strong>Date:</strong> ${entry.fields.EntryDate}</p>
-                                <p>${entry.fields.JournalText}</p>`;
-          entriesDiv.appendChild(entryDiv);
-        });
-
-      } catch (error) {
-        console.log("Error fetching previous entries:", error);
-      }
-    }
-
-    // Load previous entries on page load
-    window.onload = function() {
-      loadPreviousEntries();
-    };
-  </script>
-</body>
-</html>
+        if (data.results.length === 0) {
+          entriesDiv.innerHTML = "<p>No previous entries found.</p>"; // Display message if no entries
+        } else {
+          data.results.forEach(entry => {
+            const entryDiv = document.createElement("div");
+            entryDiv.className = "entry";
+            entryDiv.innerHTML = `<p><strong>User:</strong> ${entry.fields.User}</p>
+                                  <p><strong>Date:</strong> ${entry.fields.EntryDate}</p>
+                                  <p>${entry.fields.JournalText}</p>`;
+            entriesDiv.appendChild(entryDiv);
+          })
