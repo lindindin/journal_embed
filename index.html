@@ -44,8 +44,8 @@
     </form>
 
     <script>
-        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Replace with your Baserow API token
-        const tableId = '658218'; // Replace with your Baserow table ID
+        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Your Baserow API token
+        const tableId = '658218'; // Your Baserow table ID
 
         // Function to generate a random unique UUID
         function generateUUID() {
@@ -62,33 +62,35 @@
         }
 
         const userId = getUserIdFromUrl();
-       if (userId) {
-    // Fetch the user's journal entry using their unique User ID
-    fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
-        headers: {
-            'Authorization': `Token ${apiToken}`
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.results.length > 0) {
-            // Populate the form with the existing journal entry or an empty string if undefined
-            const journalEntry = data.results[0]['Journal Entry'] || '';  // Use empty string if undefined
-            document.getElementById('journalEntry').value = journalEntry;
-            document.getElementById('infoText').innerText = 'Update your journal entry:';
-            document.getElementById('updateButton').style.display = 'inline';
-            document.getElementById('submitButton').style.display = 'none';
+        if (userId) {
+            // Fetch the user's journal entry using their unique User ID
+            fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
+                headers: {
+                    'Authorization': `Token ${apiToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    // Populate the form with the existing journal entry or an empty string if undefined
+                    const journalEntry = data.results[0]['Journal Entry'] || '';  // Use empty string if undefined
+                    document.getElementById('journalEntry').value = journalEntry;
+                    document.getElementById('infoText').innerText = 'Update your journal entry:';
+                    document.getElementById('updateButton').style.display = 'inline';
+                    document.getElementById('submitButton').style.display = 'none';
+                } else {
+                    document.getElementById('infoText').innerText = 'No previous entry found. Please submit your first entry.';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching entry:', error);
+                document.getElementById('infoText').innerText = 'Error loading your journal entry. Please try again later.';
+            });
         } else {
-            document.getElementById('infoText').innerText = 'No previous entry found. Please submit your first entry.';
+            document.getElementById('infoText').innerText = 'Please submit your first journal entry.';
         }
-    })
-    .catch(error => {
-        console.error('Error fetching entry:', error);
-        document.getElementById('infoText').innerText = 'Error loading your journal entry. Please try again later.';
-    });
-} else {
-    document.getElementById('infoText').innerText = 'Please submit your first journal entry.';
-}
+
+        // Function to submit a new journal entry
         function submitJournal() {
             const journalText = document.getElementById('journalEntry').value;
             const uniqueUserId = generateUUID();
@@ -98,10 +100,10 @@
                 "User ID": uniqueUserId
             };
 
-            fetch(`https://api.baserow.io/api/database/rows/table/$658218/?user_field_names=true`, {
+            fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
+                    'Authorization': `Token ${apiToken}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(rowData)
@@ -121,9 +123,9 @@
         function updateJournal() {
             const journalText = document.getElementById('journalEntry').value;
 
-            fetch(`https://api.baserow.io/api/database/rows/table/$658218/?user_field_names=true&filter__User%20ID=${userId}`, {
+            fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
                 headers: {
-                    'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
+                    'Authorization': `Token ${apiToken}`,
                     'Content-Type': 'application/json'
                 }
             })
@@ -131,10 +133,10 @@
             .then(data => {
                 if (data.results.length > 0) {
                     const rowId = data.results[0].id;
-                    fetch(`https://api.baserow.io/api/database/rows/table/$658218/${rowId}/?user_field_names=true`, {
+                    fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/${rowId}/?user_field_names=true`, {
                         method: 'PATCH',
                         headers: {
-                            'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
+                            'Authorization': `Token ${apiToken}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ 'Journal Entry': journalText })
