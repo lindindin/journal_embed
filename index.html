@@ -73,7 +73,8 @@
             .then(data => {
                 if (data.results.length > 0) {
                     // Populate the form with the existing journal entry
-                    document.getElementById('journalEntry').value = data.results[0]['Journal Entry'];
+                  const journalEntry = data.results[0]['Journal Entry'] || '';  // Use empty string if undefined
+document.getElementById('journalEntry').value = journalEntry;
                     document.getElementById('infoText').innerText = 'Update your journal entry:';
                     document.getElementById('updateButton').style.display = 'inline';
                     document.getElementById('submitButton').style.display = 'none';
