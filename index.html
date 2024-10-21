@@ -31,22 +31,32 @@
         button:disabled {
             background-color: #ccc;
         }
+        #entries {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
     </style>
-</head>
-<body>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-    <h1>Reflective Journal</h1>
-    <p id="infoText">Loading your journal entry...</p>
-    <form id="journalForm">
-        <textarea id="journalEntry" placeholder="Write your journal entry here..."></textarea><br>
-        <button type="button" id="submitButton" onclick="submitJournal()">Save Entry</button>
-        <button type="button" id="updateButton" onclick="updateJournal()" style="display:none;">Update Entry</button>
-    </form>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfTvMRw9dmzvcdVAUuhUXN9cUfWRIOqmo",
+            authDomain: "reflective-journal-a860d.firebaseapp.com",
+            databaseURL: "https://reflective-journal-a860d-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "reflective-journal-a860d",
+            storageBucket: "reflective-journal-a860d.appspot.com",
+            messagingSenderId: "276136316033",
+            appId: "1:276136316033:web:ff084988e31b1657981180"
+        };
 
-    <script>
-        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Your Baserow API token
-        const tableId = '658218'; // Your Baserow table ID
-        const baseUrl = 'https://api.baserow.io/api/database/rows/table/';
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Function to generate a random unique UUID
         function generateUUID() {
@@ -56,127 +66,67 @@
             });
         }
 
-        // Function to get the User ID from localStorage or create a new one
-        function getUserId() {
-            let userId = localStorage.getItem('userId');
-            if (!userId) {
-                userId = generateUUID();
-                localStorage.setItem('userId', userId);
+        // Function to save journal entry
+        document.addEventListener('DOMContentLoaded', function() {
+            const submitButton = document.getElementById('submitButton');
+            submitButton.addEventListener('click', function() {
+                const journalText = document.getElementById('journalEntry').value;
+                const userId = localStorage.getItem('userId') || generateUUID(); // Use existing ID or create a new one
+                localStorage.setItem('userId', userId); // Store user ID in localStorage
+                const timestamp = new Date().toISOString();
+
+                // Save entry to Firebase
+                set(ref(database, 'journalEntries/' + userId), {
+                    entry: journalText,
+                    date: timestamp,
+                    userId: userId
+                }).then(() => {
+                    alert('Your journal entry has been saved successfully!');
+                    document.getElementById('journalEntry').value = ''; // Clear the textarea
+                    fetchEntries(); // Fetch updated entries
+                }).catch((error) => {
+                    console.error('Error saving entry:', error);
+                    alert('There was an error saving your journal entry. Please try again.');
+                });
+            });
+
+            // Function to fetch journal entries
+            function fetchEntries() {
+                const userId = localStorage.getItem('userId');
+                const entryList = document.getElementById('entryList');
+                entryList.innerHTML = ''; // Clear existing entries
+
+                // Fetching the entry from Firebase
+                const dbRef = ref(database);
+                get(child(dbRef, 'journalEntries/' + userId)).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        entryList.innerHTML += `<p><strong>Date:</strong> ${data.date}<br><strong>Entry:</strong> ${data.entry}</p>`;
+                    } else {
+                        entryList.innerHTML = '<p>No entries found. Please add a journal entry.</p>';
+                    }
+                }).catch((error) => {
+                    console.error('Error fetching entries:', error);
+                });
             }
-            return userId;
-        }
 
-        const userId = getUserId();
-
-        // Fetch user's existing journal entry using their User ID
-        function fetchJournalEntry() {
-            fetch(`${baseUrl}${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
-                headers: {
-                    'Authorization': `Token ${apiToken}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.results.length > 0) {
-                    const journalEntry = data.results[0]['Journal Entry'] || ''; // Empty if undefined
-                    document.getElementById('journalEntry').value = journalEntry;
-                    document.getElementById('infoText').innerText = 'Update your journal entry:';
-                    document.getElementById('updateButton').style.display = 'inline';
-                    document.getElementById('submitButton').style.display = 'none';
-                } else {
-                    document.getElementById('infoText').innerText = 'No previous entry found. Please submit your first entry.';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching entry:', error);
-                document.getElementById('infoText').innerText = 'Error loading your journal entry. Please try again later.';
-            });
-        }
-
-        fetchJournalEntry(); // Call the function on page load
-
-        // Function to submit a new journal entry
-        function submitJournal() {
-            const journalText = document.getElementById('journalEntry').value;
-            const rowData = {
-                "Journal Entry": journalText,
-                "User ID": userId,
-                "Date": new Date().toISOString()
-            };
-
-            fetch(`${baseUrl}${tableId}/?user_field_names=true`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Token ${apiToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(rowData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Submission response:", data); // Log submission response
-                alert('Your journal entry has been saved successfully!');
-                document.getElementById('updateButton').style.display = 'inline';
-                document.getElementById('submitButton').style.display = 'none';
-            })
-            .catch(error => {
-                console.error('Error saving journal entry:', error);
-                alert('There was an error saving your journal entry. Please try again.');
-            });
-        }
-
-        // Function to update an existing journal entry
-        function updateJournal() {
-            const journalText = document.getElementById('journalEntry').value;
-
-            fetch(`${baseUrl}${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
-                headers: {
-                    'Authorization': `Token ${apiToken}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.results.length > 0) {
-                    const rowId = data.results[0].id;
-                    fetch(`${baseUrl}${tableId}/${rowId}/?user_field_names=true`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': `Token ${apiToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 'Journal Entry': journalText })
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        alert('Your journal entry has been updated!');
-                    })
-                    .catch(error => {
-                        console.error('Error updating journal entry:', error);
-                        alert('There was an error updating your journal entry. Please try again.');
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching entry:', error);
-                alert('There was an error fetching your entry for update. Please try again.');
-            });
-        }
+            // Fetch entries on page load
+            fetchEntries();
+        });
     </script>
+</head>
+<body>
+
+    <h1>Reflective Journal</h1>
+    <form id="journalForm">
+        <textarea id="journalEntry" placeholder="Write your journal entry here..."></textarea><br>
+        <button type="button" id="submitButton">Save Entry</button>
+    </form>
+
+    <div id="entries">
+        <h2>Your Journal Entries:</h2>
+        <div id="entryList"></div>
+    </div>
 
 </body>
 </html>
