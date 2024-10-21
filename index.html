@@ -110,7 +110,7 @@
             .then(response => response.json())
             .then(data => {
                 alert('Your journal entry has been saved successfully!');
-                window.location.href = `https://your-github-page-url?user_id=${uniqueUserId}`; // Redirect with the new user ID
+                window.location.href = `https://lindindin.github.io/journal_embed/?user_id=${uniqueUserId}`; // Redirect with the new user ID
             })
             .catch(error => {
                 console.error('Error saving journal entry:', error);
