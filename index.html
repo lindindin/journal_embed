@@ -3,51 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal Entry</title>
+    <title>Reflective Journal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+    </style>
 </head>
 <body>
-    <h1>Your Reflective Journal</h1>
-    <form id="journal-form">
-        <textarea id="journalEntry" rows="10" cols="50">Loading your entry...</textarea>
-        <br>
-        <button type="button" onclick="updateJournal()">Update Entry</button>
+
+    <h1>Reflective Journal</h1>
+    <p id="infoText">Loading your journal entry...</p>
+    <form id="journalForm">
+        <textarea id="journalEntry" placeholder="Write your journal entry here..."></textarea><br>
+        <button type="button" id="submitButton" onclick="submitJournal()">Save Entry</button>
+        <button type="button" id="updateButton" onclick="updateJournal()" style="display:none;">Update Entry</button>
     </form>
 
     <script>
-        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Use an environment variable or server-side protection in production
-        const tableId = '658218';
-        const rowId = 'Lindis'; // You can dynamically set this based on the user
+        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Replace with your Baserow API token
+        const tableId = '658218'; // Replace with your Baserow table ID
 
-        // Fetch and display the user's journal entry
-        fetch(`https://api.baserow.io/api/database/rows/table/658218/Lindis/`, {
-            headers: {
-                'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('journalEntry').value = data['Journal Entry'];
-        })
-        .catch(error => console.error('Error fetching entry:', error));
+        // Function to generate a random unique UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
 
-        // Function to update the journal entry
-        function updateJournal() {
-            const updatedEntry = document.getElementById('journalEntry').value;
+        // Function to extract user ID from the URL
+        function getUserIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('user_id');
+        }
 
-            fetch(`https://api.baserow.io/api/database/rows/table/$658218/$Lindis/`, {
-                method: 'PUT',
+        const userId = getUserIdFromUrl();
+        if (userId) {
+            // Fetch the user's journal entry using their unique User ID
+            fetch(`https://api.baserow.io/api/database/rows/table/$658218/?user_field_names=true&filter__User%20ID=${userId}`, {
+                headers: {
+                    'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    // Populate the form with the existing journal entry
+                    document.getElementById('journalEntry').value = data.results[0]['Journal Entry'];
+                    document.getElementById('infoText').innerText = 'Update your journal entry:';
+                    document.getElementById('updateButton').style.display = 'inline';
+                    document.getElementById('submitButton').style.display = 'none';
+                } else {
+                    document.getElementById('infoText').innerText = 'No previous entry found. Please submit your first entry.';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching entry:', error);
+                document.getElementById('infoText').innerText = 'Error loading your journal entry. Please try again later.';
+            });
+        } else {
+            document.getElementById('infoText').innerText = 'Please submit your first journal entry.';
+        }
+
+        // Function to submit a new journal entry
+        function submitJournal() {
+            const journalText = document.getElementById('journalEntry').value;
+            const uniqueUserId = generateUUID();
+
+            const rowData = {
+                "Journal Entry": journalText,
+                "User ID": uniqueUserId
+            };
+
+            fetch(`https://api.baserow.io/api/database/rows/table/$658218/?user_field_names=true`, {
+                method: 'POST',
                 headers: {
                     'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 'Journal Entry': updatedEntry })
+                body: JSON.stringify(rowData)
             })
             .then(response => response.json())
             .then(data => {
-                alert('Journal entry updated successfully!');
+                alert('Your journal entry has been saved successfully!');
+                window.location.href = `https://your-github-page-url?user_id=${uniqueUserId}`; // Redirect with the new user ID
             })
-            .catch(error => console.error('Error updating entry:', error));
+            .catch(error => {
+                console.error('Error saving journal entry:', error);
+                alert('There was an error saving your journal entry. Please try again.');
+            });
+        }
+
+        // Function to update an existing journal entry
+        function updateJournal() {
+            const journalText = document.getElementById('journalEntry').value;
+
+            fetch(`https://api.baserow.io/api/database/rows/table/$658218/?user_field_names=true&filter__User%20ID=${userId}`, {
+                headers: {
+                    'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    const rowId = data.results[0].id;
+                    fetch(`https://api.baserow.io/api/database/rows/table/$658218/${rowId}/?user_field_names=true`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Token $qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 'Journal Entry': journalText })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('Your journal entry has been updated!');
+                    })
+                    .catch(error => {
+                        console.error('Error updating journal entry:', error);
+                        alert('There was an error updating your journal entry. Please try again.');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching entry:', error);
+                alert('There was an error fetching your entry for update. Please try again.');
+            });
         }
     </script>
+
 </body>
 </html>
