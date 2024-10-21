@@ -44,8 +44,8 @@
     </form>
 
     <script>
-        const apiToken = 'qr5iiGs4vtRrcuPB5pglc1tAY6LvWTXr'; // Replace with your Baserow API token
-        const tableId = '658218'; // Replace with your Baserow table ID
+        const apiToken = 'your-api-token'; // Replace with your Baserow API token
+        const tableId = 'your-table-id'; // Replace with your Baserow table ID
         const baseUrl = 'https://api.baserow.io/api/database/rows/table/';
 
         // Function to generate a random unique UUID
@@ -66,7 +66,7 @@
             return userId;
         }
 
-        const userId = getUserId();
+        const userId = getUserId();  // Get user ID (either stored or generated)
 
         // Fetch user's existing journal entry using their User ID
         fetch(`${baseUrl}${tableId}/?user_field_names=true&filter__User%20ID=${userId}`, {
@@ -80,8 +80,8 @@
                 const journalEntry = data.results[0]['Journal Entry'] || ''; // Empty if undefined
                 document.getElementById('journalEntry').value = journalEntry;
                 document.getElementById('infoText').innerText = 'Update your journal entry:';
-                document.getElementById('updateButton').style.display = 'inline';
-                document.getElementById('submitButton').style.display = 'none';
+                document.getElementById('updateButton').style.display = 'inline'; // Show update button
+                document.getElementById('submitButton').style.display = 'none';  // Hide submit button
             } else {
                 document.getElementById('infoText').innerText = 'No previous entry found. Please submit your first entry.';
             }
@@ -97,7 +97,7 @@
             const rowData = {
                 "Journal Entry": journalText,
                 "User ID": userId,
-                "Date": new Date().toISOString()
+                "Date": new Date().toISOString() // Capture current date and time
             };
 
             fetch(`${baseUrl}${tableId}/?user_field_names=true`, {
@@ -133,7 +133,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.results.length > 0) {
-                    const rowId = data.results[0].id;
+                    const rowId = data.results[0].id;  // Get the row ID for the existing entry
                     fetch(`${baseUrl}${tableId}/${rowId}/?user_field_names=true`, {
                         method: 'PATCH',
                         headers: {
